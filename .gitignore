@@ -4,3 +4,6 @@
 Makefile
 makefile
 *autosave
+.vscode
+*.jpg
+*.png
