@@ -32,6 +32,7 @@ x_train = x[:-test_count]
 y_train = y[:-test_count]
 x_test = x[-test_count:]
 y_test = y[-test_count:]
+
 model = Sequential()
 model.add(Conv2D(32, (3, 3), input_shape=(img_size, img_size, 1), activation='relu', padding='same'))
 model.add(Conv2D(32, (3, 3), activation='relu'))
