@@ -2,7 +2,7 @@ from keras.models import load_model
 from scipy.misc import imread, imresize
 import numpy
 
-model = load_model('my_model1.h5')
+model = load_model('my_model.h5')
 model.load_weights('my_model_weights.h5')
 while True:
     try:

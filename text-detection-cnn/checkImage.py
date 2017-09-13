@@ -6,11 +6,11 @@ import numpy as np
 
 print("Загружаю сеть из файлов")
 # Загружаем данные об архитектуре сети
-model = load_model('my_model1.h5')
+model = load_model('my_model.h5')
 
 # Создаем модель
 # Загружаем сохраненные веса в модель
-model.load_weights("my_model_weights1.h5")
+model.load_weights("my_model_weights.h5")
 print("Загрузка сети завершена")
 
 # Компилируем загруженную модель
