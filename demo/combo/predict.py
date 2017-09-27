@@ -33,7 +33,7 @@ def detect(score_map, geo_map, timer, score_map_thresh=0.8, box_thresh=0.1, nms_
     # restore
     start = time.time()
     text_box_restored = restore_rectangle(xy_text[:, ::-1] * 4, geo_map[xy_text[:, 0], xy_text[:, 1], :])  # N*4*2
-    print('{} text boxes before nms'.format(text_box_restored.shape[0]))
+    # print('{} text boxes before nms'.format(text_box_restored.shape[0]))
     boxes = np.zeros((text_box_restored.shape[0], 9), dtype=np.float32)
     boxes[:, :8] = text_box_restored.reshape((-1, 8))
     boxes[:, 8] = score_map[xy_text[:, 0], xy_text[:, 1]]
@@ -169,6 +169,7 @@ with tf.get_default_graph().as_default():
                                                                  box[2, 0], box[2, 1], box[3, 0], box[3, 1], ))
                             cv2.polylines(image[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True,
                                           color=(0, 255, 0), thickness=1)
+                    print(result)
                 else:
                     print('no text')
                 cv2.imwrite('/tmp/text_located.jpg', image[:, :, ::-1])
