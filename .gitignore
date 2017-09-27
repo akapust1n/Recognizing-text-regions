@@ -1,8 +1,6 @@
 *build
 *o
 *.user
-Makefile
-makefile
 *autosave
 .vscode
 *.jpg
