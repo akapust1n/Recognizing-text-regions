@@ -13,7 +13,12 @@ rm -rf result
 mkdir result
 for img in `ls *."$1"`
 do
-  convert $img  -type Grayscale -resize $2x$2\! result/processed_$img
+  if ($1 == "text") 
+  then
+  convert $img  -type Grayscale -resize $2x$2\! result/text_processed_$img
+  else
+  convert $img  -type Grayscale -resize $2x$2\! result/notext_processed_$img
+  fi
   counter=$(($counter+1))
 done
 echo "# Argegated $counter images"
