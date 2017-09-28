@@ -5,6 +5,5 @@
 *.jpg
 *.png
 .idea/
-__*
 server/app/__pycache__/*
 server/flask_session/
