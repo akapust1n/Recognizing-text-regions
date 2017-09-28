@@ -6,6 +6,7 @@ import tensorflow as tf
 from pathlib import Path
 from keras.models import load_model
 from scipy.misc import imread, imresize
+from keras import backend as K
 
 import lanms
 import model
@@ -43,17 +44,14 @@ def detect(score_map, geo_map, timer, score_map_thresh=0.8, box_thresh=0.1, nms_
     # boxes = nms_locality.nms_locality(boxes.astype(np.float64), nms_thres)
     boxes = lanms.merge_quadrangle_n9(boxes.astype('float32'), nms_thres)
     timer['nms'] = time.time() - start
-
     if boxes.shape[0] == 0:
         return None, timer
-
     # here we filter some low score boxes by the average score map, this is different from the orginal paper
     for i, box in enumerate(boxes):
         mask = np.zeros_like(score_map, dtype=np.uint8)
         cv2.fillPoly(mask, box[:8].reshape((-1, 4, 2)).astype(np.int32) // 4, 1)
         boxes[i, 8] = cv2.mean(score_map, mask)[0]
     boxes = boxes[boxes[:, 8] > box_thresh]
-
     return boxes, timer
 
 
@@ -74,10 +72,8 @@ def resize_image(im, max_side_len=1024):
     :return: the resized image and the resize ratio
     '''
     h, w, _ = im.shape
-
     resize_w = w
     resize_h = h
-
     # limit the max side
     if max(resize_h, resize_w) > max_side_len:
         ratio = float(max_side_len) / resize_h if resize_h > resize_w else float(max_side_len) / resize_w
@@ -85,90 +81,87 @@ def resize_image(im, max_side_len=1024):
         ratio = 1.
     resize_h = int(resize_h * ratio)
     resize_w = int(resize_w * ratio)
-
     resize_h = resize_h if resize_h % 32 == 0 else (resize_h // 32 - 1) * 32
     resize_w = resize_w if resize_w % 32 == 0 else (resize_w // 32 - 1) * 32
     im = cv2.resize(im, (int(resize_w), int(resize_h)))
-
     ratio_h = resize_h / float(h)
     ratio_w = resize_w / float(w)
-
     return im, (ratio_h, ratio_w)
 
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 home_dir = str(Path.home())
-with tf.get_default_graph().as_default():
+
+with K.name_scope('a'):
+    my_model = load_model(home_dir + '/my_model/my_model.h5')
+
+g = tf.Graph()
+sess = tf.Session(graph=g, config=tf.ConfigProto(allow_soft_placement=True))
+with K.name_scope('b'), g.as_default(), sess.as_default():
     input_images = tf.placeholder(tf.float32, shape=[None, None, None, 3], name='input_images')
     global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
-
     f_score, f_geometry = model.model(input_images, is_training=False)
-
     variable_averages = tf.train.ExponentialMovingAverage(0.997, global_step)
     saver = tf.train.Saver(variable_averages.variables_to_restore())
+    checkpoint_path = home_dir + '/east_icdar2015_resnet_v1_50_rbox'
+    ckpt_state = tf.train.get_checkpoint_state(checkpoint_path)
+    model_path = os.path.join(checkpoint_path, os.path.basename(ckpt_state.model_checkpoint_path))
+    saver.restore(sess, model_path)
 
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        checkpoint_path = home_dir + '/east_icdar2015_resnet_v1_50_rbox'
-        ckpt_state = tf.train.get_checkpoint_state(checkpoint_path)
-        model_path = os.path.join(checkpoint_path, os.path.basename(ckpt_state.model_checkpoint_path))
-        saver.restore(sess, model_path)
+while True:
+    try:
+        path = input('img path: ')
+        image = imread(path, True, 'L')
+    except OSError as e:
+        print(e)
+        continue
+    print('detecting text...')
+    file_read_time = time.time()
+    im_formatted = imresize(image, (224, 224))
+    im_formatted = im_formatted.astype('float32')
+    im_formatted /= 255
+    im_formatted = im_formatted.reshape(1, 224, 224, 1)
+    with K.name_scope('a'):
+        prediction = my_model.predict(im_formatted)
+    end_time = time.time()
+    has_text = prediction[0][0] > 0.9
+    if has_text:
+        print('has text')
+    else:
+        print('no text')
+    print('calculation time (s): ', end_time - file_read_time)
 
-        my_model = load_model(home_dir + '/my_model/my_model.h5')
-        while True:
-            try:
-                path = input('img path: ')
-                image = imread(path, True, 'L')
-            except OSError:
-                print('OSError')
-                continue
-            print('detecting text...')
-            file_read_time = time.time()
-            im_formatted = imresize(image, (224, 224))
-            im_formatted = im_formatted.astype('float32')
-            im_formatted /= 255
-            im_formatted = im_formatted.reshape(1, 224, 224, 1)
-            prediction = my_model.predict(im_formatted)
-            end_time = time.time()
-            has_text = prediction[0][0] > 0.9
-            if has_text:
-                print('has text')
-            else:
-                print('no text')
-            print('calculation time (s): ', end_time - file_read_time)
-
-            if has_text:
-                print('locating text...')
-                image = cv2.imread(path)[:, :, ::-1]
-                start_time = time.time()
-                im_resized, (ratio_h, ratio_w) = resize_image(image)
-                timer = {'net': 0, 'restore': 0, 'nms': 0}
-                start = time.time()
-                score, geometry = sess.run([f_score, f_geometry], feed_dict={input_images: [im_resized]})
-                timer['net'] = time.time() - start
-
-                boxes, timer = detect(score_map=score, geo_map=geometry, timer=timer)
-                print('net {:.0f}ms, restore {:.0f}ms, nms {:.0f}ms'.format(
-                    timer['net'] * 1000, timer['restore'] * 1000, timer['nms'] * 1000))
-                if boxes is not None:
-                    boxes = boxes[:, :8].reshape((-1, 4, 2))
-                    boxes[:, :, 0] /= ratio_w
-                    boxes[:, :, 1] /= ratio_h
-
-                duration = time.time() - start_time
-                print('[timing] {}'.format(duration))
-
-                result = []
-                if boxes is not None:
-                    for box in boxes:
-                        # to avoid submitting errors
-                        box = sort_poly(box.astype(np.int32))
-                        if np.linalg.norm(box[0] - box[1]) >= 5 and np.linalg.norm(box[3] - box[0]) >= 5:
-                            result.append(
-                                '{},{},{},{},{},{},{},{}'.format(box[0, 0], box[0, 1], box[1, 0], box[1, 1],
-                                                                 box[2, 0], box[2, 1], box[3, 0], box[3, 1], ))
-                            cv2.polylines(image[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True,
-                                          color=(0, 255, 0), thickness=1)
-                    print(result)
-                else:
-                    print('no text')
-                cv2.imwrite('/tmp/text_located.jpg', image[:, :, ::-1])
+    if has_text:
+        print('locating text...')
+        image = cv2.imread(path)[:, :, ::-1]
+        start_time = time.time()
+        im_resized, (ratio_h, ratio_w) = resize_image(image)
+        timer = {'net': 0, 'restore': 0, 'nms': 0}
+        start = time.time()
+        with K.name_scope('b'), g.as_default(), sess.as_default():
+            score, geometry = sess.run([f_score, f_geometry], feed_dict={input_images: [im_resized]})
+        timer['net'] = time.time() - start
+        boxes, timer = detect(score_map=score, geo_map=geometry, timer=timer)
+        print('net {:.0f}ms, restore {:.0f}ms, nms {:.0f}ms'.format(
+            timer['net'] * 1000, timer['restore'] * 1000, timer['nms'] * 1000))
+        if boxes is not None:
+            boxes = boxes[:, :8].reshape((-1, 4, 2))
+            boxes[:, :, 0] /= ratio_w
+            boxes[:, :, 1] /= ratio_h
+        duration = time.time() - start_time
+        print('[timing] {}'.format(duration))
+        result = []
+        if boxes is not None:
+            for box in boxes:
+                # to avoid submitting errors
+                box = sort_poly(box.astype(np.int32))
+                if np.linalg.norm(box[0] - box[1]) >= 5 and np.linalg.norm(box[3] - box[0]) >= 5:
+                    result.append(
+                        '{},{},{},{},{},{},{},{}'.format(box[0, 0], box[0, 1], box[1, 0], box[1, 1],
+                                                         box[2, 0], box[2, 1], box[3, 0], box[3, 1], ))
+                    cv2.polylines(image[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True,
+                                  color=(0, 0, 255), thickness=1)
+            print(result)
+        else:
+            print('no text')
+        cv2.imwrite('/tmp/text_located.jpg', image[:, :, ::-1])
