@@ -5,7 +5,6 @@ import time
 
 home_dir = str(Path.home())
 model = load_model(home_dir + '/my_model/my_model.h5')
-model.load_weights(home_dir + '/my_model/my_model_weights.h5')
 while True:
     try:
         path = input('img path: ')

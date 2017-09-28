@@ -19,4 +19,3 @@ model.fit_generator(train_generator,
                     validation_data=validation_generator,
                     validation_steps=validation_steps)
 model.save('vgg16_model.h5')
-model.save_weights('vgg16_model_weights.h5')

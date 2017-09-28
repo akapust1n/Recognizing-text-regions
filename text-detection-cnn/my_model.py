@@ -23,4 +23,3 @@ model.fit_generator(train_generator,
                     validation_data=validation_generator,
                     validation_steps=validation_steps)
 model.save('my_model.h5')
-model.save_weights('my_model_weights.h5')

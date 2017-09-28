@@ -114,7 +114,6 @@ with tf.get_default_graph().as_default():
         saver.restore(sess, model_path)
 
         my_model = load_model(home_dir + '/my_model/my_model.h5')
-        my_model.load_weights(home_dir + '/my_model/my_model_weights.h5')
         while True:
             try:
                 path = input('img path: ')
