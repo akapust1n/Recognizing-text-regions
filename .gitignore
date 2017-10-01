@@ -8,3 +8,11 @@
 __*
 server/app/__pycache__/*
 server/flask_session/
+text-detection-cnn/my_model.h5
+text-detection-cnn/my_model_weights.h5
+*.o
+.qmake.stash
+MakeFile
+makefile
+Makefile
+moc_*
