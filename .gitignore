@@ -5,7 +5,6 @@
 *.jpg
 *.png
 .idea/
-__*
 server/app/__pycache__/*
 server/flask_session/
 text-detection-cnn/my_model.h5
