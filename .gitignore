@@ -6,12 +6,11 @@
 *.png
 .idea/
 server/app/__pycache__/*
+*/__pycache__/*
 server/flask_session/
 text-detection-cnn/my_model.h5
 text-detection-cnn/my_model_weights.h5
 *.o
 .qmake.stash
-MakeFile
-makefile
-Makefile
+GenerateText/Makefile
 moc_*
