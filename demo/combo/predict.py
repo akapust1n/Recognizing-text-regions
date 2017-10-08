@@ -89,6 +89,10 @@ def resize_image(im, max_side_len=1024):
     return im, (ratio_h, ratio_w)
 
 
+def rgb2gray(rgb):
+    return np.dot(rgb[..., :3], [0.299, 0.587, 0.114])
+
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 home_dir = str(Path.home())
 
@@ -111,13 +115,14 @@ with K.name_scope('b'), g.as_default(), sess.as_default():
 while True:
     try:
         path = input('img path: ')
-        image = imread(path, True, 'L')
+        image = imread(path, mode='RGB')
     except OSError as e:
         print(e)
         continue
     print('detecting text...')
     file_read_time = time.time()
-    im_formatted = imresize(image, (224, 224))
+    im_formatted = rgb2gray(image)
+    im_formatted = imresize(im_formatted, (224, 224))
     im_formatted = im_formatted.astype('float32')
     im_formatted /= 255
     im_formatted = im_formatted.reshape(1, 224, 224, 1)
@@ -133,7 +138,6 @@ while True:
 
     if has_text:
         print('locating text...')
-        image = cv2.imread(path)[:, :, ::-1]
         start_time = time.time()
         im_resized, (ratio_h, ratio_w) = resize_image(image)
         timer = {'net': 0, 'restore': 0, 'nms': 0}
@@ -159,9 +163,9 @@ while True:
                     result.append(
                         '{},{},{},{},{},{},{},{}'.format(box[0, 0], box[0, 1], box[1, 0], box[1, 1],
                                                          box[2, 0], box[2, 1], box[3, 0], box[3, 1], ))
-                    cv2.polylines(image[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True,
+                    cv2.polylines(image, [box.astype(np.int32).reshape((-1, 1, 2))], True,
                                   color=(0, 0, 255), thickness=1)
             print(result)
         else:
             print('no text')
-        cv2.imwrite('/tmp/text_located.jpg', image[:, :, ::-1])
+        cv2.imwrite('/tmp/text_located.jpg', image)
