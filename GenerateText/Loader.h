@@ -15,6 +15,7 @@ public:
     int countImages();
     QFileInfoList getFonts();
     QFileInfoList getImages();
+    int loadFonts();
 private:
     QFileInfoList fontList;
     QFileInfoList  imageList;

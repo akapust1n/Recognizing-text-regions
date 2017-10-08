@@ -7,11 +7,7 @@
 class Generator : public QObject {
     Q_OBJECT
 public:
-    Generator(QObject* parent = 0)
-        : QObject(parent)
-        , gen(std::random_device()())
-    {
-    }
+    Generator(QObject* parent = 0);
     int generateImages(int count);
 
 private:
@@ -33,8 +29,12 @@ private:
 
 private:
     int imagesPerFont;
+    int fontNum;
     std::mt19937 gen;
     WordGenerator wordGenerator;
+    std::uniform_int_distribution<> dis;
+    std::uniform_int_distribution<> disColor;
+    std::uniform_int_distribution<> disFont;
 };
 
 #endif // GENERATOR_H

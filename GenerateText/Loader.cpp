@@ -1,4 +1,5 @@
 #include "Loader.h"
+#include "Loader.h"
 #include <QDir>
 #include <QFontDatabase>
 
@@ -53,4 +54,12 @@ QFileInfoList Loader::getImages()
 {
 
     return imageList;
+}
+
+int Loader::loadFonts()
+{
+    for(auto const & font: fontList ){
+        QFontDatabase::addApplicationFont(font.filePath());
+
+    }
 }
