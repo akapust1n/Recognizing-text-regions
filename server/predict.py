@@ -161,7 +161,6 @@ def predict(file):
                                                          box[2, 0], box[2, 1], box[3, 0], box[3, 1], ))
                     # cv2.polylines(image, [box.astype(np.int32).reshape((-1, 1, 2))], True,
                     #               color=(0, 0, 255), thickness=1)
-            print(result)
         else:
             print('no text')
         # cv2.imwrite('/tmp/text_located.jpg', image)
@@ -172,6 +171,6 @@ if __name__ == '__main__':
     while True:
         path = input('img path: ')
         try:
-            predict(path)
+            print(predict(path))
         except OSError as e:
             print(e)
