@@ -1,6 +1,5 @@
-import tensorflow as tf
 import numpy as np
-
+import tensorflow as tf
 from tensorflow.contrib import slim
 
 tf.app.flags.DEFINE_integer('text_scale', 512, '')

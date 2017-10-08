@@ -1,12 +1,13 @@
-import cv2
-import time
 import os
+import time
+from pathlib import Path
+
+import cv2
 import numpy as np
 import tensorflow as tf
-from pathlib import Path
+from keras import backend as K
 from keras.models import load_model
 from scipy.misc import imread, imresize
-from keras import backend as K
 
 import lanms
 import model
@@ -112,13 +113,9 @@ with K.name_scope('b'), g.as_default(), sess.as_default():
     model_path = os.path.join(checkpoint_path, os.path.basename(ckpt_state.model_checkpoint_path))
     saver.restore(sess, model_path)
 
-while True:
-    try:
-        path = input('img path: ')
-        image = imread(path, mode='RGB')
-    except OSError as e:
-        print(e)
-        continue
+
+def predict(file):
+    image = imread(file, mode='RGB')
     print('detecting text...')
     file_read_time = time.time()
     im_formatted = rgb2gray(image)
@@ -135,7 +132,6 @@ while True:
     else:
         print('no text')
     print('calculation time (s): ', end_time - file_read_time)
-
     if has_text:
         print('locating text...')
         start_time = time.time()
@@ -163,9 +159,19 @@ while True:
                     result.append(
                         '{},{},{},{},{},{},{},{}'.format(box[0, 0], box[0, 1], box[1, 0], box[1, 1],
                                                          box[2, 0], box[2, 1], box[3, 0], box[3, 1], ))
-                    cv2.polylines(image, [box.astype(np.int32).reshape((-1, 1, 2))], True,
-                                  color=(0, 0, 255), thickness=1)
+                    # cv2.polylines(image, [box.astype(np.int32).reshape((-1, 1, 2))], True,
+                    #               color=(0, 0, 255), thickness=1)
             print(result)
         else:
             print('no text')
-        cv2.imwrite('/tmp/text_located.jpg', image)
+        # cv2.imwrite('/tmp/text_located.jpg', image)
+        return result
+
+
+if __name__ == '__main__':
+    while True:
+        path = input('img path: ')
+        try:
+            predict(path)
+        except OSError as e:
+            print(e)
