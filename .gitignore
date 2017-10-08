@@ -14,3 +14,6 @@ text-detection-cnn/my_model_weights.h5
 .qmake.stash
 GenerateText/Makefile
 moc_*
+callgrind.out.*
+**/__pycache__/**
+*.swp

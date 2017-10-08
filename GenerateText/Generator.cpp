@@ -7,6 +7,17 @@
 #include <random>
 #include <stdlib.h>
 
+Generator::Generator(QObject* parent)
+    : QObject(parent)
+    , gen(std::random_device()())
+    , dis(0, 9)
+    , disColor(0, 9)
+{
+    fontNum = loader.countFonts();
+    disFont = std::uniform_int_distribution<>(0, fontNum - 1);
+    loader.loadFonts();
+}
+
 int Generator::generateImages(int count)
 {
     int countFonts = loader.countFonts();
@@ -22,9 +33,12 @@ int Generator::generateImages(int count)
     if (tenPercents == 0) {
         tenPercents = 1;
     }
-
-    for (const auto& image : imageList) {
+#pragma omp parallel for
+    // for (const auto& image : imageList) {
+    for (int i = 0; i < imageList.size(); i++) {
+        auto image = imageList.at(i);
         addText(IMAGESPATH + image.fileName(), fontCounter);
+        //  std::cout << "font counter " << fontCounter << std::endl;
         fontCounter++;
         if (!(fontCounter % tenPercents)) {
             static int counter = 10;
@@ -38,10 +52,10 @@ int Generator::generateImages(int count)
 bool Generator::addText(QString imagename, const int fontCounter)
 {
     QImage image(imagename);
-    std::uniform_int_distribution<> dis(0, 9);
     int numWords = dis(gen) + 3;
+    QPainter p;
+
     for (int i = 0; i < numWords; i++) {
-        QPainter p;
         int fontsize = getFontSize(image.rect());
         if (!p.begin(&image))
             return false;
@@ -62,8 +76,13 @@ bool Generator::addText(QString imagename, const int fontCounter)
 QFont Generator::getFont(const int imagesPerFont, const int countImages)
 {
     static QFileInfoList fontList = loader.getFonts();
-    int index = countImages / imagesPerFont;
-    int id = QFontDatabase::addApplicationFont(fontList[index].filePath());
+    int index = countImages / imagesPerFont - 1;
+    if (index < 0 or index == fontList.size()) {
+        index = 0;
+    }
+
+    int id = disFont(gen);
+
     QString family = QFontDatabase::applicationFontFamilies(id).at(0);
     QFont font(family, 12);
     return font;
@@ -71,8 +90,7 @@ QFont Generator::getFont(const int imagesPerFont, const int countImages)
 
 QColor Generator::getColor()
 {
-    std::uniform_int_distribution<> dis(0, 9);
-    int temp = dis(gen);
+    int temp = disColor(gen);
     switch (temp) {
     case 0:
     case 1:
