@@ -132,6 +132,7 @@ def predict(file):
     else:
         print('no text')
     print('calculation time (s): ', end_time - file_read_time)
+    result = []
     if has_text:
         print('locating text...')
         start_time = time.time()
@@ -150,7 +151,6 @@ def predict(file):
             boxes[:, :, 1] /= ratio_h
         duration = time.time() - start_time
         print('[timing] {}'.format(duration))
-        result = []
         if boxes is not None:
             for box in boxes:
                 # to avoid submitting errors
@@ -164,7 +164,7 @@ def predict(file):
         else:
             print('no text')
         # cv2.imwrite('/tmp/text_located.jpg', image)
-        return result
+    return result
 
 
 if __name__ == '__main__':
