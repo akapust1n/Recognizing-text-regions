@@ -1,0 +1,2 @@
+find . -maxdepth 1 -type f | sort -R | head -20000|xargs mv -t  /home/alexey/Documents/dtset2/train/text/
+find . -maxdepth 1 -type f|sort -R |head -20000|xargs cp -t  /home/alexey/Documents/dtset2/train/notext/

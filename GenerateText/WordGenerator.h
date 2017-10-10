@@ -2,12 +2,16 @@
 #define WORDGENERATOR_H
 #include <QString>
 #include <random>
+#include <QFont>
+#include <QRect>
 
 class WordGenerator
 {
 public:
     WordGenerator():gen(std::random_device()()),  disLetterType(0,3), disWordLen( 3, 10), disEnglishLetter(0, 25), disRussianLetter(0, 32){}
-    QString getWord();
+    QString getWord(int maxWidth, QFont &font);
+    QRect wordSize(QString word, QFont &font);
+
 private:
     QString getLetter(int letterType);
     QString getRusLowLetter();

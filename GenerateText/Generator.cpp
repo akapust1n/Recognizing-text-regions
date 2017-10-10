@@ -2,8 +2,10 @@
 #include <QDir>
 #include <QFontDatabase>
 #include <QImage>
+#include <QMutex>
 #include <QPainter>
 #include <iostream>
+#include <omp.h>
 #include <random>
 #include <stdlib.h>
 
@@ -33,43 +35,73 @@ int Generator::generateImages(int count)
     if (tenPercents == 0) {
         tenPercents = 1;
     }
-#pragma omp parallel for
+
+    #pragma omp parallel for
     // for (const auto& image : imageList) {
     for (int i = 0; i < imageList.size(); i++) {
         auto image = imageList.at(i);
         addText(IMAGESPATH + image.fileName(), fontCounter);
-        //  std::cout << "font counter " << fontCounter << std::endl;
-        fontCounter++;
+        //  //std::cout << "font counter " << fontCounter << std::endl;
+
         if (!(fontCounter % tenPercents)) {
             static int counter = 10;
             std::cout << counter << " percents!\n";
             counter += 10;
         }
     }
+
     return fontCounter;
 }
 
-bool Generator::addText(QString imagename, const int fontCounter)
+bool Generator::addText(QString imagename, int& fontCounter)
 {
     QImage image(imagename);
-    int numWords = dis(gen) + 3;
+    int numWords = dis(gen) + 1;
     QPainter p;
+    QVector<QRect> rects;
+    //std::cout << "BEFORE CYCLE" << std::endl;
 
     for (int i = 0; i < numWords; i++) {
         int fontsize = getFontSize(image.rect());
         if (!p.begin(&image))
             return false;
+
         QFont font = getFont(imagesPerFont, fontCounter);
-        font.setPixelSize(getFontSize(image.rect()));
+        font.setPixelSize(fontsize);
         p.setFont(font);
         p.setPen(QPen(getColor(), 100));
 
-        QRect coords1 = getCoords(image.rect(), fontsize);
-        p.drawText(coords1, Qt::AlignCenter, wordGenerator.getWord());
-
+        QString word = wordGenerator.getWord(image.rect().width(), font);
+        QRect wordSize = wordGenerator.wordSize(word, font);
+        //std::cout<<"WORD "<<word.toStdString()<<"__"<<font.pointSize()<<std::endl;
+        QRect coords1 = getCoords(image.rect(), fontsize, rects, wordSize);
+        if (coords1.size().width() == 0) {
+            //std::cout << "CANT INSERT new word to image" << std::endl;
+            p.end();
+            break; //can't insert new word to image
+        }
+        rects.append(coords1);
+        p.drawText(coords1, Qt::AlignCenter, word);
+        //        p.fillRect(coords1,Qt::red);
+        //        QPainterPath path;
+        //        path.addRoundedRect(coords1, 10, 10);
+        //        QPen pen(Qt::black, 10);
+        //        p.setPen(pen);
+        //        p.fillPath(path, Qt::red);
+        //        p.drawPath(path);
         p.end();
     }
-    bool result = image.save(RESULTSPATH + QString::number(fontCounter) + ".png");
+    //std::cout << "END CYCLE" << std::endl;
+    // //std::cout<<"rects size_"<<rects.size()<<std::endl;
+    int counter;
+#pragma omp critical
+    {
+        counter = fontCounter;
+        fontCounter++;
+    }
+
+    bool result = image.save(RESULTSPATH + QString::number(counter) + ".png");
+    //std::cout << result << std::endl;
     return result;
 }
 
@@ -111,35 +143,53 @@ QColor Generator::getColor()
     }
 }
 
-QRect Generator::getCoords(QRect imageCoords, int fontSize)
+QRect Generator::getCoords(QRect imageCoords, int fontSize, QVector<QRect>& rects, QRect wordSize)
 {
+   if(imageCoords.bottomRight().x()<wordSize.width())
 
-    std::uniform_int_distribution<> disX(0, imageCoords.bottomRight().x());
-    std::uniform_int_distribution<> disY(0, imageCoords.bottomRight().y());
+       std::cout<<"error1";
+   if(imageCoords.bottomRight().y()<wordSize.height())
+       std::cout<<"error2";
+    std::uniform_int_distribution<> disX(0, imageCoords.bottomRight().x() - wordSize.width());
+    std::uniform_int_distribution<> disY(0, imageCoords.bottomRight().y() - wordSize.height());
+    //std::cout << "after uniform_int_distribution\n ";
     QPoint start, finish;
+    QRect result{ QPoint{ 0, 0 }, QPoint{ 0, 0 } };
+    int counter = 0;
+    bool isContains = true;
     do {
-        start.setX(disX(gen));
-        start.setY(disY(gen));
-        finish.setX(disX(gen));
-        finish.setY(disY(gen));
-        if (start.x() > finish.x()) {
-            int temp = start.x();
-            start.setX(finish.x());
-            finish.setX(temp);
-        }
-        if (start.y() > finish.y()) {
-            int temp = start.y();
-            start.setY(finish.y());
-            finish.setY(temp);
-        }
-    } while ((finish.y() - start.y()) < fontSize);
-    QRect result(start, finish);
+        counter++;
+        do {
+            //std::cout << "before generation \n ";
+            //std::cout << (imageCoords.bottomRight().x())<<"_"<<(wordSize.width())
+                      //<< std::endl
+                    //  << (imageCoords.bottomRight().y() - wordSize.height()) << std::endl;
+
+            start.setX(disX(gen));
+            start.setY(disY(gen));
+
+            finish.setX(start.x() + wordSize.width());
+            finish.setY(start.y() + wordSize.height());
+            //std::cout << "intro cycle1 " << start.x() << " " << start.y() << std::endl;
+            //std::cout << "FINISH: " << finish.x() << " " << finish.y() << std::endl;
+
+            //std::cout << "IMAGE: " << imageCoords.height() << " " << imageCoords.width() << std::endl;
+            //std::cout << "WORD: " << wordSize.width() << " " << wordSize.height() << std::endl;
+
+        } while (finish.y() > imageCoords.height() or finish.x() > imageCoords.width());
+        //std::cout << "intro cycle2 \n";
+
+        isContains = contains(rects, { start, finish });
+    } while (counter < 10 and (isContains));
+    if (!isContains) {
+        result.setCoords(start.x(), start.y(), start.x() + wordSize.width(), start.y() + wordSize.height());
+    } //QRect result(start, finish);
     return result;
 }
 
-QString Generator::getWord()
+QString Generator::getWord(int maxWidth, QFont &font)
 {
-    return wordGenerator.getWord();
+    return wordGenerator.getWord(maxWidth, font);
 }
 
 int Generator::getFontSize(QRect rect)
@@ -153,6 +203,18 @@ Generator::fontBorders Generator::getBorders(QRect rect)
 {
     int height = rect.size().height();
     int start = height / 20;
-    int finish = height / 5; // потому что
+    int finish = height / 7; // потому что
     return { start, finish };
+}
+
+bool Generator::contains(QVector<QRect>& rects, QRect coords) const
+{
+    for (auto const& rect : rects) {
+
+        if (rect.intersects(coords)) {
+            // //std::cout<<"INTERSECTS!"<<std::endl;
+            return true;
+        }
+    }
+    return false;
 }

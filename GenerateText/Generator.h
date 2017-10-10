@@ -2,7 +2,9 @@
 #define GENERATOR_H
 #include <Loader.h>
 #include <QObject>
+#include <QVector>
 #include <WordGenerator.h>
+#include <QFont>
 
 class Generator : public QObject {
     Q_OBJECT
@@ -18,14 +20,14 @@ private:
 
 private:
     Loader loader;
-    bool addText(QString imagename, const int fontCounter);
+    bool addText(QString imagename, int& fontCounter);
     QFont getFont(const int imagesPerFont, const int countImages);
     QColor getColor();
-    QRect getCoords(QRect imageCoords, int fontSize);
-    QString getWord();
-    QString getLetter();
+    QRect getCoords(QRect imageCoords, int fontSize, QVector<QRect>& rects, QRect wordSize);
+    QString getWord(int maxWidth, QFont &font);
     int getFontSize(QRect rect);
     fontBorders getBorders(QRect rect);
+    bool contains(QVector<QRect>& rects, QRect coords) const;
 
 private:
     int imagesPerFont;

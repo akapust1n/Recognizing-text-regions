@@ -1,14 +1,39 @@
 #include "WordGenerator.h"
+#include <QFontMetrics>
+#include <iostream>
 
-QString WordGenerator::getWord()
+QString WordGenerator::getWord(int maxWidth, QFont& font)
 {
+start:
+    int wordLen = 0, len = 0;
+    QFontMetrics fm(font);
+    int widthOneLetter = fm.width("a");
+
     int letterType = disLetterType(gen);
-    int len = disWordLen(gen);
+    do {
+        len = disWordLen(gen);
+        wordLen = len * widthOneLetter;
+
+    } while ((maxWidth -10) < len);
+    //std::cout << "\n\n Image width and word width" << maxWidth << "__" << len << std::endl;
     QString word;
     for (int i = 0; i < len; i++) {
         word += getLetter(letterType);
     }
+    if (fm.width(word) > (maxWidth-10)){
+        goto start;                //потому что я могу
+    }
+   // std::cout<<fm.width(word)<<"____-"<<maxWidth<<"\n";
+
     return word;
+}
+
+QRect WordGenerator::wordSize(QString word, QFont& font)
+{
+    QFontMetrics fm(font);
+    int width = fm.width(word);
+    int height = fm.height();
+    return { QPoint{ 0, 0 }, QPoint{ width, height } };
 }
 
 QString WordGenerator::getLetter(int letterType)
@@ -97,7 +122,6 @@ QString WordGenerator::getRusLowLetter()
         return QString::fromUtf8(u8"ю");
     case 32:
         return QString::fromUtf8(u8"я");
-
     }
 }
 
@@ -171,6 +195,5 @@ QString WordGenerator::getRusUpLetter()
         return QString::fromUtf8(u8"Ю");
     case 32:
         return QString::fromUtf8(u8"Я");
-
     }
 }
