@@ -6,9 +6,9 @@ train_data_dir = home_dir + '/data/train'
 validation_data_dir = home_dir + '/data/validation'
 img_size = 224
 batch_size = 32
-train_samples = 45000
-validation_samples = 5000
-epochs = 150
+train_samples = 40000
+validation_samples = 10000
+epochs = 100
 steps_per_epoch = train_samples // batch_size
 validation_steps = validation_samples // batch_size
 datagen = ImageDataGenerator(rescale=1. / 255)
