@@ -114,7 +114,7 @@ with K.name_scope('b'), g.as_default(), sess.as_default():
     saver.restore(sess, model_path)
 
 
-def predict(file):
+def predict(file, return_image=False):
     image = imread(file, mode='RGB')
     print('detecting text...')
     file_read_time = time.time()
@@ -159,11 +159,13 @@ def predict(file):
                     result.append(
                         '{},{},{},{},{},{},{},{}'.format(box[0, 0], box[0, 1], box[1, 0], box[1, 1],
                                                          box[2, 0], box[2, 1], box[3, 0], box[3, 1]))
-                    # cv2.polylines(image, [box.astype(np.int32).reshape((-1, 1, 2))], True,
-                    #               color=(0, 0, 255), thickness=1)
+                    if return_image:
+                        cv2.polylines(image, [box.astype(np.int32).reshape((-1, 1, 2))], True,
+                                      color=(0, 0, 255), thickness=1)
         else:
             print('no text')
-        # cv2.imwrite('/tmp/text_located.jpg', image)
+    if return_image:
+        return result, image
     return result
 
 
@@ -171,6 +173,8 @@ if __name__ == '__main__':
     while True:
         path = input('img path: ')
         try:
-            print(predict(path))
+            res, img = predict(path, True)
+            print(res)
+            cv2.imwrite('/tmp/text_located.jpg', img)
         except OSError as e:
             print(e)
