@@ -19,4 +19,4 @@ test_generator = datagen.flow_from_directory(test_data_dir,
                                              class_mode='binary',
                                              batch_size=batch_size)
 results = my_model.predict_generator(test_generator, steps)
-print("Accuracy: ", len([i for i in results if i[0] > THRESHOLD]) / len(results))
+print("Accuracy:", len([i for i in results if i[0] > THRESHOLD]) / len(results))
