@@ -2,7 +2,7 @@ import os
 from tempfile import NamedTemporaryFile
 
 from cv2 import imwrite
-from flask import Flask, request, jsonify, render_template, make_response
+from flask import Flask, request, jsonify, render_template
 
 from predict import predict
 
@@ -35,3 +35,4 @@ def demo_clear():
     for f in os.listdir(TMP_DIR):
         if f.endswith('.jpg'):
             os.remove(os.path.join(TMP_DIR, f))
+    return 'OK'
