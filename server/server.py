@@ -36,3 +36,7 @@ def demo_clear():
         if f.endswith('.jpg'):
             os.remove(os.path.join(TMP_DIR, f))
     return 'OK'
+
+
+if __name__ == '__main__':
+    app.run()
