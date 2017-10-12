@@ -9,14 +9,18 @@
     <input type="file" name="img">
     <input type="submit">
 </form>
-<hr>
-<div>{{ coordinates }}</div>
-<hr>
-<div><img src="{{ image }}"></div>
-<script>
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/clear', false);
-    xhr.send();
-</script>
+{% if coordinates %}
+    <hr>
+    <div>{{ coordinates }}</div>
+{% endif %}
+{% if image %}
+    <hr>
+    <div><img src="{{ image }}"></div>
+    <script>
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/clear', false);
+        xhr.send();
+    </script>
+{% endif %}
 </body>
 </html>
