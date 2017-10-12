@@ -33,4 +33,5 @@ def demo_post():
 @app.route('/clear')
 def demo_clear():
     for f in os.listdir(TMP_DIR):
-        os.remove(os.path.join(TMP_DIR, f))
+        if f.endswith('.jpg'):
+            os.remove(os.path.join(TMP_DIR, f))
