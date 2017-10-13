@@ -11,17 +11,17 @@ app = Flask(__name__)
 TMP_DIR = 'static'
 
 
-@app.route('/', methods=['POST'])
+@app.route('/images', methods=['POST'])
 def receive_images():
     return jsonify([predict(file) for file in request.files.values()])
 
 
-@app.route('/demo')
+@app.route('/')
 def demo():
     return render_template('demo.html')
 
 
-@app.route('/demo', methods=['POST'])
+@app.route('/', methods=['POST'])
 def demo_post():
     results = []
     for result in (predict(file, True) for file in request.files.getlist("files")):
@@ -41,4 +41,4 @@ def demo_clear():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=80)
