@@ -49,4 +49,5 @@ def demo_clear():
     return 'OK'
 
 
-app.run()
+if __name__ == '__main__':
+    app.run()
