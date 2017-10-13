@@ -126,7 +126,7 @@ def predict(file, return_image=False):
     with K.name_scope('a'):
         prediction = my_model.predict(im_formatted)
     end_time = time.time()
-    has_text = prediction[0][0] > 0.9
+    has_text = prediction[0][0] > 0.5
     if has_text:
         print('has text')
     else:
