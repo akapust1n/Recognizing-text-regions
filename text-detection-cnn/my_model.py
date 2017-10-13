@@ -1,6 +1,7 @@
 from keras.layers import Dense, Flatten, Dropout
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.models import Sequential
+
 from data import img_size, train_generator, validation_generator, steps_per_epoch, validation_steps, epochs
 
 model = Sequential()

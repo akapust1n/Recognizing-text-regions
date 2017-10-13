@@ -1,16 +1,15 @@
 # coding:utf-8
-import glob
 import csv
-import cv2
-import time
+import glob
 import os
-import numpy as np
-import scipy.optimize
-import matplotlib.pyplot as plt
-import matplotlib.patches as Patches
-from shapely.geometry import Polygon
+import time
 
+import cv2
+import matplotlib.patches as Patches
+import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
+from shapely.geometry import Polygon
 
 from data_util import GeneratorEnqueuer
 

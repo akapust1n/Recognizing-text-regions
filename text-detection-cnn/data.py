@@ -1,5 +1,6 @@
-from keras.preprocessing.image import ImageDataGenerator
 from pathlib import Path
+
+from keras.preprocessing.image import ImageDataGenerator
 
 home_dir = str(Path.home())
 train_data_dir = home_dir + '/data/train'

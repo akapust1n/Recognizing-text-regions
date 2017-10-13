@@ -1,7 +1,7 @@
 from __future__ import division
 
 import six
-from keras.models import Model
+from keras import backend as K
 from keras.layers import (
     Input,
     Activation,
@@ -15,8 +15,8 @@ from keras.layers.convolutional import (
 )
 from keras.layers.merge import add
 from keras.layers.normalization import BatchNormalization
+from keras.models import Model
 from keras.regularizers import l2
-from keras import backend as K
 
 
 def _bn_relu(input):
@@ -95,6 +95,7 @@ def _shortcut(input, residual):
 def _residual_block(block_function, filters, repetitions, is_first_layer=False):
     """Builds a residual block with repeating bottleneck blocks.
     """
+
     def f(input):
         for i in range(repetitions):
             init_strides = (1, 1)
@@ -111,6 +112,7 @@ def basic_block(filters, init_strides=(1, 1), is_first_block_of_first_layer=Fals
     """Basic 3 X 3 convolution blocks for use on resnets with layers <= 34.
     Follows improved proposed scheme in http://arxiv.org/pdf/1603.05027v2.pdf
     """
+
     def f(input):
 
         if is_first_block_of_first_layer:
@@ -137,6 +139,7 @@ def bottleneck(filters, init_strides=(1, 1), is_first_block_of_first_layer=False
     Returns:
         A final conv layer of filters * 4
     """
+
     def f(input):
 
         if is_first_block_of_first_layer:

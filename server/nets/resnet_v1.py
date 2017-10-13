@@ -336,7 +336,6 @@ def resnet_v1_200(inputs,
 
 resnet_v1_200.default_image_size = resnet_v1.default_image_size
 
-
 if __name__ == '__main__':
     input = tf.placeholder(tf.float32, shape=(None, 224, 224, 3), name='input')
     with slim.arg_scope(resnet_arg_scope()) as sc:
