@@ -20,9 +20,11 @@
 {% endfor %}
 
 <script>
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/clear', false);
-    xhr.send();
+    window.onload = function () {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/clear', false);
+        xhr.send();
+    }
 </script>
 </body>
 
