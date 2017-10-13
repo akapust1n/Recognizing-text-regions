@@ -1,26 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Text detection</title>
 </head>
+
 <body>
-<form method="post" enctype="multipart/form-data">
-    <input type="file" name="img">
-    <input type="submit">
-</form>
-{% if coordinates %}
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" multiple="" name="file[]" accept="image/*">
+        <input type="submit">
+    </form>
+    {% for coordinate in coordinates %}
     <hr>
-    <div>{{ coordinates }}</div>
-{% endif %}
-{% if image %}
+    <div>{{ coordinate }}</div>
+
     <hr>
-    <div><img src="{{ image }}"></div>
+    <div>
+        <img src="{{ images[loop.index0]  }} ">
+    </div>
+    {% endfor %}
+
     <script>
         var xhr = new XMLHttpRequest();
         xhr.open('GET', '/clear', false);
         xhr.send();
     </script>
-{% endif %}
 </body>
+
 </html>

@@ -23,11 +23,22 @@ def demo():
 
 @app.route('/demo', methods=['POST'])
 def demo_post():
-    temp = NamedTemporaryFile(suffix='.jpg', delete=False, dir=TMP_DIR)
-    result, img = predict(request.files.get('img'), True)
-    imwrite(temp.name, img)
-    name = '/'.join(temp.name.split('/')[-2:])
-    return render_template('demo.html', coordinates=result, image=name)
+    tempFiles = []
+    names = []
+    print(request.files.getlist("file[]"))
+    result, images = predict(request.files.getlist("file[]"), True)
+    for index in range(len(images)):
+        tempFiles.append(NamedTemporaryFile(
+            suffix='.jpg', delete=False, dir=TMP_DIR))
+
+    print("name__", tempFiles[0].name)
+
+    for index in range(len(images)):
+        imwrite(tempFiles[index].name, images[index])
+        names.append('/'.join(tempFiles[index].name.split('/')[-2:]))
+    print("result__", result)
+
+    return render_template('demo.html', coordinates=result, images=names)
 
 
 @app.route('/clear')
@@ -36,3 +47,6 @@ def demo_clear():
         if f.endswith('.jpg'):
             os.remove(os.path.join(TMP_DIR, f))
     return 'OK'
+
+
+app.run()
