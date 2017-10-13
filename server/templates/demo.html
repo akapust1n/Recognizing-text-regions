@@ -7,25 +7,23 @@
 </head>
 
 <body>
-    <form method="post" enctype="multipart/form-data">
-        <input type="file" multiple="" name="file[]" accept="image/*">
-        <input type="submit">
-    </form>
-    {% for coordinate in coordinates %}
+<form method="post" enctype="multipart/form-data">
+    <input type="file" multiple="" name="files" accept="image/*">
+    <input type="submit">
+</form>
+{% for result in results %}
     <hr>
-    <div>{{ coordinate }}</div>
-
-    <hr>
+    <div>{{ result[0] }}</div>
     <div>
-        <img src="{{ images[loop.index0]  }} ">
+        <img src="{{ result[1] }} ">
     </div>
-    {% endfor %}
+{% endfor %}
 
-    <script>
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', '/clear', false);
-        xhr.send();
-    </script>
+<script>
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/clear', false);
+    xhr.send();
+</script>
 </body>
 
 </html>
