@@ -98,7 +98,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 home_dir = str(Path.home())
 
 with K.name_scope('a'):
-    my_model = load_model(home_dir + '/my_model/my_model.h5')
+    my_model = load_model(home_dir + '/resnet18/resnet18.h5')
 
 g = tf.Graph()
 sess = tf.Session(graph=g, config=tf.ConfigProto(allow_soft_placement=True))
