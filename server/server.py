@@ -3,6 +3,7 @@ from tempfile import NamedTemporaryFile
 
 from cv2 import imwrite
 from flask import Flask, request, jsonify, render_template
+from werkzeug.contrib.fixers import ProxyFix
 
 from predict import predict
 
@@ -40,5 +41,6 @@ def demo_clear():
     return 'OK'
 
 
+app.wsgi_app = ProxyFix(app.wsgi_app)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80)
