@@ -117,7 +117,7 @@ with K.name_scope('b'), g.as_default(), sess.as_default():
 def predict(file, return_image=False):
     image = imread(file, mode='RGB')
     print('detecting text...')
-    file_read_time = time.time()
+    start_time = time.time()
     im_formatted = rgb2gray(image)
     im_formatted = imresize(im_formatted, (224, 224))
     im_formatted = im_formatted.astype('float32')
@@ -125,15 +125,10 @@ def predict(file, return_image=False):
     im_formatted = im_formatted.reshape(1, 224, 224, 1)
     with K.name_scope('a'):
         prediction = my_model.predict(im_formatted)
-    end_time = time.time()
+    print('calculation time (s): ', time.time() - start_time)
     has_text = prediction[0][0] > 0.5
     if has_text:
-        print('has text')
-    else:
-        print('no text')
-    print('calculation time (s): ', end_time - file_read_time)
-    result = []
-    if has_text:
+        print('text detected')
         print('locating text...')
         start_time = time.time()
         im_resized, (ratio_h, ratio_w) = resize_image(image)
@@ -152,6 +147,7 @@ def predict(file, return_image=False):
         duration = time.time() - start_time
         print('[timing] {}'.format(duration))
         if boxes is not None:
+            result = []
             for box in boxes:
                 # to avoid submitting errors
                 box = sort_poly(box.astype(np.int32))
@@ -163,7 +159,11 @@ def predict(file, return_image=False):
                         cv2.polylines(image, [box.astype(np.int32).reshape((-1, 1, 2))], True,
                                       color=(0, 0, 255), thickness=1)
         else:
-            print('no text')
+            result = 'no text located'
+            print(result)
+    else:
+        result = 'no text detected'
+        print(result)
     if return_image:
         return result, image
     return result
