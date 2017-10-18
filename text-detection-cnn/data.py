@@ -1,10 +1,12 @@
 from pathlib import Path
+import sys
 
 from keras.preprocessing.image import ImageDataGenerator
 
 home_dir = str(Path.home())
-train_data_dir = home_dir + '/data/train'
-validation_data_dir = home_dir + '/data/validation'
+data_dir = sys.argv[1]
+train_data_dir = home_dir + f'/data/{data_dir}/train'
+validation_data_dir = home_dir + f'/data/{data_dir}/validation'
 img_size = 224
 batch_size = 32
 train_samples = 40000
