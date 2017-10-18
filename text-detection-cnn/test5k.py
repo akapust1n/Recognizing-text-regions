@@ -1,4 +1,5 @@
 from pathlib import Path
+from sys import argv
 
 from keras.models import load_model
 from keras.preprocessing.image import ImageDataGenerator
@@ -6,7 +7,8 @@ from keras.preprocessing.image import ImageDataGenerator
 THRESHOLD = 0.5
 
 home_dir = str(Path.home())
-my_model = load_model(home_dir + '/resnet18/resnet18.h5')
+model_path = argv[1]
+my_model = load_model(home_dir + '/' + model_path)
 notext_data_dir = home_dir + '/notext'
 text_data_dir = home_dir + '/text'
 img_size = 224
