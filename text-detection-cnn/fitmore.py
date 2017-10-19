@@ -37,4 +37,4 @@ my_model.fit_generator(train_generator,
                        epochs=epochs,
                        validation_data=validation_generator,
                        validation_steps=validation_steps)
-my_model.save(model_path[:-3] + '_fitmore.h5')
+my_model.save(model_path.split('/')[-1][:-3] + '_fitmore.h5')
