@@ -165,7 +165,7 @@ def predict(file, return_image=False):
         result = 'no text detected'
         print(result)
     if return_image:
-        return result, image
+        return result, image[:, :, ::-1]
     return result
 
 

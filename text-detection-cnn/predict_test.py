@@ -3,10 +3,10 @@ from pathlib import Path
 from keras.models import load_model
 from keras.preprocessing.image import ImageDataGenerator
 
-THRESHOLD = 0.9
+THRESHOLD = 0.5
 
 home_dir = str(Path.home())
-my_model = load_model(home_dir + '/my_model/my_model.h5')
+my_model = load_model(home_dir + '/resnet18/resnet18.h5')
 test_data_dir = home_dir + '/test_data'
 img_size = 224
 batch_size = 8
