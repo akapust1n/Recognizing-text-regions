@@ -4,6 +4,7 @@
 #include <QImage>
 #include <QMutex>
 #include <QPainter>
+#include <cmath>
 #include <iostream>
 #include <omp.h>
 #include <random>
@@ -12,15 +13,19 @@
 Generator::Generator(QObject* parent)
     : QObject(parent)
     , gen(std::random_device()())
-    , dis(0, 9)
+    , dis(2, MAXNUMWORDS)
     , disColor(0, 9)
+    , disLines(0, 15)
+    , disLineWidth(1, 5)
+    , disLinesPosition(0, 4)
+    , disAngleGenerator(10, 80)
 {
     fontNum = loader.countFonts();
     disFont = std::uniform_int_distribution<>(0, fontNum - 1);
     loader.loadFonts();
 }
 
-int Generator::generateImages(int count)
+int Generator::generateImages(int count, bool onlyNoise)
 {
     int countFonts = loader.countFonts();
     int countImages = loader.countImages();
@@ -36,12 +41,25 @@ int Generator::generateImages(int count)
         tenPercents = 1;
     }
 
-    #pragma omp parallel for
+#pragma omp parallel for
     // for (const auto& image : imageList) {
     for (int i = 0; i < imageList.size(); i++) {
-        auto image = imageList.at(i);
-        addText(IMAGESPATH + image.fileName(), fontCounter);
-        //  //std::cout << "font counter " << fontCounter << std::endl;
+
+        auto imageName = imageList.at(i).fileName();
+        QImage image(QString(IMAGESPATH + imageName));
+        if (image.isNull()) {
+            continue;
+        }
+        if (onlyNoise) {
+            auto rects = QVector<QRect>(); // :))))))))
+            addLines(image, fontCounter, rects);
+
+        } else {
+            auto rects = addText(image, fontCounter);
+            if (rects.size()) {
+                addLines(image, fontCounter, rects);
+            };
+        }
 
         if (!(fontCounter % tenPercents)) {
             static int counter = 10;
@@ -53,56 +71,96 @@ int Generator::generateImages(int count)
     return fontCounter;
 }
 
-bool Generator::addText(QString imagename, int& fontCounter)
+const QVector<QRect> Generator::addText(QImage& image, int& fontCounter, bool save)
 {
-    QImage image(imagename);
     int numWords = dis(gen) + 1;
     QPainter p;
     QVector<QRect> rects;
     //std::cout << "BEFORE CYCLE" << std::endl;
 
     for (int i = 0; i < numWords; i++) {
-        int fontsize = getFontSize(image.rect());
         if (!p.begin(&image))
-            return false;
+            return QVector<QRect>{};
+
+        int fontsize = getFontSize(image.rect());
 
         QFont font = getFont(imagesPerFont, fontCounter);
         font.setPixelSize(fontsize);
         p.setFont(font);
         p.setPen(QPen(getColor(), 100));
-
+        // p.setBackground(QBrush(Qt::white));
         QString word = wordGenerator.getWord(image.rect().width(), font);
         QRect wordSize = wordGenerator.wordSize(word, font);
         //std::cout<<"WORD "<<word.toStdString()<<"__"<<font.pointSize()<<std::endl;
-        QRect coords1 = getCoords(image.rect(), fontsize, rects, wordSize);
+        QRect coords1 = getCoords(image.rect(), rects, wordSize);
         if (coords1.size().width() == 0) {
             //std::cout << "CANT INSERT new word to image" << std::endl;
             p.end();
             break; //can't insert new word to image
         }
         rects.append(coords1);
+
         p.drawText(coords1, Qt::AlignCenter, word);
-        //        p.fillRect(coords1,Qt::red);
-        //        QPainterPath path;
-        //        path.addRoundedRect(coords1, 10, 10);
-        //        QPen pen(Qt::black, 10);
-        //        p.setPen(pen);
-        //        p.fillPath(path, Qt::red);
-        //        p.drawPath(path);
+
         p.end();
     }
     //std::cout << "END CYCLE" << std::endl;
     // //std::cout<<"rects size_"<<rects.size()<<std::endl;
-    int counter;
+
+    if (save) {
+        int counter;
 #pragma omp critical
-    {
-        counter = fontCounter;
-        fontCounter++;
+        {
+            counter = fontCounter;
+            fontCounter++;
+        }
+
+        image.save(RESULTSPATH + QString::number(counter) + ".png");
+    }
+    //std::cout << result << std::endl;
+    return rects;
+}
+
+const QVector<QRect>& Generator::addLines(QImage& image, int& fontCounter, QVector<QRect>& rects, bool save)
+{
+    int numLines = disLines(gen) + 1;
+    QPainter p;
+
+    for (int i = 0; i < numLines; i++) {
+        if (!p.begin(&image))
+            return QVector<QRect>{};
+        p.setRenderHint(QPainter::Antialiasing);
+        int lineWidth = disLineWidth(gen);
+        p.setPen(QPen(getColor(false), lineWidth));
+        QRect lineSize = getLineSize(image.size(), lineWidth);
+        QRect coords1 = getCoords(image.rect(), rects, lineSize);
+
+        if (coords1.size().width() == 0) {
+            p.end();
+            break; //can't insert new word to image
+        }
+        rects.append(coords1);
+        int lineDirection = disLinesPosition(gen);
+        if (lineDirection > 1) {
+            p.drawLine(coords1.topLeft(), coords1.bottomRight());
+        } else {
+            p.drawLine(coords1.bottomLeft(), coords1.topRight());
+        }
+        p.end();
     }
 
-    bool result = image.save(RESULTSPATH + QString::number(counter) + ".png");
+    if (save) {
+        int counter;
+#pragma omp critical
+        {
+            counter = fontCounter;
+            fontCounter++;
+        }
+
+        image.save(RESULTSPATH + QString::number(counter) + ".jpg");
+    }
     //std::cout << result << std::endl;
-    return result;
+    return rects;
 }
 
 QFont Generator::getFont(const int imagesPerFont, const int countImages)
@@ -120,39 +178,61 @@ QFont Generator::getFont(const int imagesPerFont, const int countImages)
     return font;
 }
 
-QColor Generator::getColor()
+QColor Generator::getColor(bool isWord)
 {
     int temp = disColor(gen);
-    switch (temp) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-        return Qt::black;
-    case 5:
-        return Qt::white;
-    case 6:
-        return Qt::red;
-    case 7:
-        return Qt::green;
-    case 8:
-        return Qt::gray;
-    case 9:
-        return Qt::darkCyan;
+    if (isWord) {
+        switch (temp) {
+        case 0:
+        case 1:
+            return Qt::black;
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+            return Qt::white;
+        case 6:
+            return Qt::red;
+        case 7:
+            return Qt::green;
+        case 8:
+            return Qt::gray;
+        case 9:
+            return Qt::darkCyan;
+        }
+    } else {
+        switch (temp) {
+        case 0:
+        case 1:
+            return Qt::black;
+        case 2:
+        case 3:
+            return Qt::gray; //да, так задумно
+
+        case 4:
+        case 5:
+            return Qt::white;
+        case 6:
+            return Qt::red;
+        case 7:
+            return Qt::green;
+        case 8:
+            return Qt::gray;
+        case 9:
+            return Qt::darkCyan;
+        }
     }
 }
 
-QRect Generator::getCoords(QRect imageCoords, int fontSize, QVector<QRect>& rects, QRect wordSize)
+QRect Generator::getCoords(QRect imageCoords, QVector<QRect>& rects, QRect wordSize)
 {
-   if(imageCoords.bottomRight().x()<wordSize.width())
+    //    if ((imageCoords.bottomRight().x() - wordSize.width()) <= 0)
+    //        std::cout << "X error\n";
 
-       std::cout<<"error1";
-   if(imageCoords.bottomRight().y()<wordSize.height())
-       std::cout<<"error2";
+    //    if ((imageCoords.bottomRight().y() - wordSize.height()) <= 0)
+    //        std::cout << "Y error\n";
     std::uniform_int_distribution<> disX(0, imageCoords.bottomRight().x() - wordSize.width());
     std::uniform_int_distribution<> disY(0, imageCoords.bottomRight().y() - wordSize.height());
-    //std::cout << "after uniform_int_distribution\n ";
     QPoint start, finish;
     QRect result{ QPoint{ 0, 0 }, QPoint{ 0, 0 } };
     int counter = 0;
@@ -160,22 +240,11 @@ QRect Generator::getCoords(QRect imageCoords, int fontSize, QVector<QRect>& rect
     do {
         counter++;
         do {
-            //std::cout << "before generation \n ";
-            //std::cout << (imageCoords.bottomRight().x())<<"_"<<(wordSize.width())
-                      //<< std::endl
-                    //  << (imageCoords.bottomRight().y() - wordSize.height()) << std::endl;
-
             start.setX(disX(gen));
             start.setY(disY(gen));
 
             finish.setX(start.x() + wordSize.width());
             finish.setY(start.y() + wordSize.height());
-            //std::cout << "intro cycle1 " << start.x() << " " << start.y() << std::endl;
-            //std::cout << "FINISH: " << finish.x() << " " << finish.y() << std::endl;
-
-            //std::cout << "IMAGE: " << imageCoords.height() << " " << imageCoords.width() << std::endl;
-            //std::cout << "WORD: " << wordSize.width() << " " << wordSize.height() << std::endl;
-
         } while (finish.y() > imageCoords.height() or finish.x() > imageCoords.width());
         //std::cout << "intro cycle2 \n";
 
@@ -187,7 +256,7 @@ QRect Generator::getCoords(QRect imageCoords, int fontSize, QVector<QRect>& rect
     return result;
 }
 
-QString Generator::getWord(int maxWidth, QFont &font)
+QString Generator::getWord(int maxWidth, QFont& font)
 {
     return wordGenerator.getWord(maxWidth, font);
 }
@@ -202,8 +271,8 @@ int Generator::getFontSize(QRect rect)
 Generator::fontBorders Generator::getBorders(QRect rect)
 {
     int height = rect.size().height();
-    int start = height / 20;
-    int finish = height / 7; // потому что
+    int start = height / FONTLOWBORDER;
+    int finish = height / FONTHIGHBORDER; // потому что
     return { start, finish };
 }
 
@@ -217,4 +286,39 @@ bool Generator::contains(QVector<QRect>& rects, QRect coords) const
         }
     }
     return false;
+}
+
+QRect Generator::getLineSize(QSize size, int lineWidth)
+{
+    int height = size.height();
+    int width = size.width();
+    int start = height / LINELOWBORDER;
+    int finish = height / LINEHIGHBORDER; // потому что
+    if (finish > width)
+        finish = width;
+    std::uniform_int_distribution<> disLocal(start, finish);
+    int lineLength = disLocal(gen);
+    int lineType = disLinesPosition(gen);
+    int angle = disAngleGenerator(gen);
+    enum {
+        Vertical = 0,
+        Horizonal,
+        lineAtAnAngleFromTop,
+        lineAtAnAngleFromTop1,
+        lineAtAnAngleFromTop2,
+    };
+    switch (lineType) {
+    case Vertical:
+        return QRect(0, 0, lineWidth, lineLength);
+
+    case Horizonal:
+        return QRect(0, 0, lineLength, lineWidth);
+    case lineAtAnAngleFromTop:
+    case lineAtAnAngleFromTop1:
+    case lineAtAnAngleFromTop2: {
+        return QRect(0, 0, width * cos(angle * M_PI / 180), height * sin(angle * M_PI / 180));
+    }
+    default:
+        return QRect(0, 0, lineWidth, lineLength);
+    }
 }
