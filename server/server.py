@@ -14,7 +14,7 @@ TMP_DIR = 'static'
 
 @app.route('/images', methods=['POST'])
 def receive_images():
-    return jsonify([predict(file) for file in request.files.values()])
+    return jsonify([predict(file)[0] for file in request.files.values()])
 
 
 @app.route('/')
@@ -27,9 +27,9 @@ def demo_post():
     results = []
     for result in (predict(file, True) for file in request.files.getlist("files")):
         temp = NamedTemporaryFile(suffix='.jpg', delete=False, dir=TMP_DIR)
-        imwrite(temp.name, result[1])
+        imwrite(temp.name, result[2])
         name = '/'.join(temp.name.split('/')[-2:])
-        results.append((result[0], name))
+        results.append((result[0], result[1], name))
     return render_template('demo.html', results=results)
 
 
@@ -43,4 +43,4 @@ def demo_clear():
 
 app.wsgi_app = ProxyFix(app.wsgi_app)
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    app.run(port=8000)
