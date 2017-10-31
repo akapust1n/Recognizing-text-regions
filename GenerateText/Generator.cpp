@@ -23,9 +23,12 @@ Generator::Generator(QObject* parent)
     fontNum = loader.countFonts();
     disFont = std::uniform_int_distribution<>(0, fontNum - 1);
     loader.loadFonts();
+    for (int i = 0; i < fontNum; i++) {
+        fonts.append(QFontDatabase::applicationFontFamilies(i).at(0));
+    }
 }
 
-int Generator::generateImages(int count, bool onlyNoise)
+int Generator::generateImages(int count, bool prMode)
 {
     int countFonts = loader.countFonts();
     int countImages = loader.countImages();
@@ -50,15 +53,22 @@ int Generator::generateImages(int count, bool onlyNoise)
         if (image.isNull()) {
             continue;
         }
-        if (onlyNoise) {
+        switch (prMode) {
+        case OnlyNoise: {
             auto rects = QVector<QRect>(); // :))))))))
             addLines(image, fontCounter, rects);
-
-        } else {
+            break;
+        }
+        case OnlyWords: {
+            auto rects = addText(image, fontCounter, true);
+            break;
+        }
+        case NoiseWords: {
             auto rects = addText(image, fontCounter);
             if (rects.size()) {
                 addLines(image, fontCounter, rects);
             };
+        }
         }
 
         if (!(fontCounter % tenPercents)) {
@@ -71,7 +81,7 @@ int Generator::generateImages(int count, bool onlyNoise)
     return fontCounter;
 }
 
-const QVector<QRect> Generator::addText(QImage& image, int& fontCounter, bool save)
+QVector<QRect> Generator::addText(QImage& image, int& fontCounter, bool save)
 {
     int numWords = dis(gen) + 1;
     QPainter p;
@@ -115,13 +125,13 @@ const QVector<QRect> Generator::addText(QImage& image, int& fontCounter, bool sa
             fontCounter++;
         }
 
-        image.save(RESULTSPATH + QString::number(counter) + ".png");
+        image.save(RESULTSPATH + QString::number(counter) + ".jpg");
     }
     //std::cout << result << std::endl;
     return rects;
 }
 
-const QVector<QRect>& Generator::addLines(QImage& image, int& fontCounter, QVector<QRect>& rects, bool save)
+QVector<QRect> Generator::addLines(QImage& image, int& fontCounter, QVector<QRect>& rects, bool save)
 {
     int numLines = disLines(gen) + 1;
     QPainter p;
@@ -173,7 +183,7 @@ QFont Generator::getFont(const int imagesPerFont, const int countImages)
 
     int id = disFont(gen);
 
-    QString family = QFontDatabase::applicationFontFamilies(id).at(0);
+    QString family = fonts[id];
     QFont font(family, 12);
     return font;
 }
@@ -226,11 +236,12 @@ QColor Generator::getColor(bool isWord)
 
 QRect Generator::getCoords(QRect imageCoords, QVector<QRect>& rects, QRect wordSize)
 {
-    //    if ((imageCoords.bottomRight().x() - wordSize.width()) <= 0)
-    //        std::cout << "X error\n";
+    if ((imageCoords.bottomRight().x() - wordSize.width()) <= 0)
+        return QRect(0, 0, 0, 0);
 
-    //    if ((imageCoords.bottomRight().y() - wordSize.height()) <= 0)
-    //        std::cout << "Y error\n";
+    if ((imageCoords.bottomRight().y() - wordSize.height()) <= 0)
+        return QRect(0, 0, 0, 0);
+
     std::uniform_int_distribution<> disX(0, imageCoords.bottomRight().x() - wordSize.width());
     std::uniform_int_distribution<> disY(0, imageCoords.bottomRight().y() - wordSize.height());
     QPoint start, finish;
@@ -296,6 +307,7 @@ QRect Generator::getLineSize(QSize size, int lineWidth)
     int finish = height / LINEHIGHBORDER; // потому что
     if (finish > width)
         finish = width;
+
     std::uniform_int_distribution<> disLocal(start, finish);
     int lineLength = disLocal(gen);
     int lineType = disLinesPosition(gen);

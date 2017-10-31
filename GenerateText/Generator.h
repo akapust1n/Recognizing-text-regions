@@ -9,8 +9,14 @@ const int FONTLOWBORDER = 27;
 const int FONTHIGHBORDER = 10;
 const int LINELOWBORDER = 9;
 const int LINEHIGHBORDER = 2;
+enum modes {
+    OnlyNoise = 0,
+    OnlyWords,
+    NoiseWords
+};
 
-const int MAXNUMWORDS = 7;
+const int MAXNUMWORDS
+    = 7;
 
 class Generator : public QObject {
     Q_OBJECT
@@ -26,8 +32,8 @@ private:
 
 private:
     Loader loader;
-    const QVector<QRect> addText(QImage& image, int& fontCounter, bool save = false);
-    const QVector<QRect>& addLines(QImage& image, int& fontCounter, QVector<QRect>& rects, bool save = true);
+    QVector<QRect> addText(QImage& image, int& fontCounter, bool save = false);
+    QVector<QRect> addLines(QImage& image, int& fontCounter, QVector<QRect>& rects, bool save = true);
     QFont getFont(const int imagesPerFont, const int countImages);
     QColor getColor(bool isWord = true);
     QRect getCoords(QRect imageCoords, QVector<QRect>& rects, QRect wordSize);
@@ -50,6 +56,7 @@ private:
     std::uniform_int_distribution<> disLineWidth;
     std::uniform_int_distribution<> disLinesPosition;
     std::uniform_int_distribution<> disAngleGenerator;
+    QVector<QString> fonts;
 };
 
 #endif // GENERATOR_H

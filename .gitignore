@@ -5,6 +5,8 @@
 *.jpg
 *.png
 .idea/
+*.otf
+*.ttf
 server/app/__pycache__/*
 */__pycache__/*
 server/flask_session/
