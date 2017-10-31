@@ -114,7 +114,7 @@ with K.name_scope('b'), g.as_default(), sess.as_default():
     saver.restore(sess, model_path)
 
 
-def predict(file, return_image=False):
+def predict(file, return_image=False, ignore_detection=False):
     image = imread(file, mode='RGB')
     print('detecting text...')
     start_time = time.time()
@@ -127,7 +127,8 @@ def predict(file, return_image=False):
         prediction = my_model.predict(im_formatted)
     print('calculation time (s): ', time.time() - start_time)
     has_text = prediction[0][0] > 0.5
-    if has_text:
+    result = []
+    if ignore_detection or has_text:
         print('text detected')
         print('locating text...')
         start_time = time.time()
@@ -147,7 +148,6 @@ def predict(file, return_image=False):
         duration = time.time() - start_time
         print('[timing] {}'.format(duration))
         if boxes is not None:
-            result = []
             for box in boxes:
                 # to avoid submitting errors
                 box = sort_poly(box.astype(np.int32))
@@ -158,15 +158,17 @@ def predict(file, return_image=False):
                     if return_image:
                         cv2.polylines(image, [box.astype(np.int32).reshape((-1, 1, 2))], True,
                                       color=(0, 0, 255), thickness=1)
+        if len(result) == 0:
+            message = 'no text located'
+            print(message)
         else:
-            result = 'no text located'
-            print(result)
+            message = 'text located'
     else:
-        result = 'no text detected'
-        print(result)
+        message = 'no text detected'
+        print(message)
     if return_image:
-        return result, image[:, :, ::-1]
-    return result
+        return result, message, image[:, :, ::-1]
+    return result, message
 
 
 if __name__ == '__main__':

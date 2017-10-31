@@ -13,9 +13,10 @@
 </form>
 {% for result in results %}
     <hr>
+    <div>{{ result[1] }}</div>
     <div>{{ result[0] }}</div>
     <div>
-        <img src="{{ result[1] }} ">
+        <img src="{{ result[2] }} ">
     </div>
 {% endfor %}
 
