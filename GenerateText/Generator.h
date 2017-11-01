@@ -29,15 +29,19 @@ private:
         int low;
         int high;
     };
+    struct Font {
+        QFont* font;
+        int id;
+    };
 
 private:
     Loader loader;
     QVector<QRect> addText(QImage& image, int& fontCounter, bool save = false);
     QVector<QRect> addLines(QImage& image, int& fontCounter, QVector<QRect>& rects, bool save = true);
-    QFont getFont(const int imagesPerFont, const int countImages);
+    Font getFont(const int imagesPerFont, const int countImages);
     QColor getColor(bool isWord = true);
     QRect getCoords(QRect imageCoords, QVector<QRect>& rects, QRect wordSize);
-    QString getWord(int maxWidth, QFont& font);
+    //QString getWord(int maxWidth, QFont& font);
     int getFontSize(QRect rect);
     fontBorders getBorders(QRect rect);
     bool contains(QVector<QRect>& rects, QRect coords) const;

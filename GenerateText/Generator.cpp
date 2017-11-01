@@ -23,9 +23,9 @@ Generator::Generator(QObject* parent)
     fontNum = loader.countFonts();
     disFont = std::uniform_int_distribution<>(0, fontNum - 1);
     loader.loadFonts();
-    for (int i = 0; i < fontNum; i++) {
-        fonts.append(QFontDatabase::applicationFontFamilies(i).at(0));
-    }
+    //    for (int i = 0; i < fontNum; i++) {
+    //        fonts.append(QFontDatabase::applicationFontFamilies(i).at(0));
+    //    }
 }
 
 int Generator::generateImages(int count, bool prMode)
@@ -94,14 +94,12 @@ QVector<QRect> Generator::addText(QImage& image, int& fontCounter, bool save)
 
         int fontsize = getFontSize(image.rect());
 
-        QFont font = getFont(imagesPerFont, fontCounter);
-        font.setPixelSize(fontsize);
-        p.setFont(font);
+        Font font = getFont(imagesPerFont, fontCounter);
+        font.font->setPixelSize(fontsize);
+        p.setFont(*font.font); //:)))))
         p.setPen(QPen(getColor(), 100));
-        // p.setBackground(QBrush(Qt::white));
-        QString word = wordGenerator.getWord(image.rect().width(), font);
-        QRect wordSize = wordGenerator.wordSize(word, font);
-        //std::cout<<"WORD "<<word.toStdString()<<"__"<<font.pointSize()<<std::endl;
+        QString word = wordGenerator.getWord(image.rect().width(), &loader, font.id);
+        QRect wordSize = wordGenerator.wordSize(word, loader.fontWordSize(word, font.id));
         QRect coords1 = getCoords(image.rect(), rects, wordSize);
         if (coords1.size().width() == 0) {
             //std::cout << "CANT INSERT new word to image" << std::endl;
@@ -173,7 +171,7 @@ QVector<QRect> Generator::addLines(QImage& image, int& fontCounter, QVector<QRec
     return rects;
 }
 
-QFont Generator::getFont(const int imagesPerFont, const int countImages)
+Generator::Font Generator::getFont(const int imagesPerFont, const int countImages)
 {
     static QFileInfoList fontList = loader.getFonts();
     int index = countImages / imagesPerFont - 1;
@@ -182,10 +180,10 @@ QFont Generator::getFont(const int imagesPerFont, const int countImages)
     }
 
     int id = disFont(gen);
-
-    QString family = fonts[id];
-    QFont font(family, 12);
-    return font;
+    QFont* font = loader.getFont(id);
+    //    QString family = fonts[id];
+    //    QFont font(family, 12);
+    return { font, id };
 }
 
 QColor Generator::getColor(bool isWord)
@@ -267,10 +265,10 @@ QRect Generator::getCoords(QRect imageCoords, QVector<QRect>& rects, QRect wordS
     return result;
 }
 
-QString Generator::getWord(int maxWidth, QFont& font)
-{
-    return wordGenerator.getWord(maxWidth, font);
-}
+//QString Generator::getWord(int maxWidth, QFont& font)
+//{
+//    return wordGenerator.getWord(maxWidth, font);
+//}
 
 int Generator::getFontSize(QRect rect)
 {

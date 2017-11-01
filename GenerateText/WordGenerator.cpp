@@ -2,37 +2,35 @@
 #include <QFontMetrics>
 #include <iostream>
 
-QString WordGenerator::getWord(int maxWidth, QFont& font)
+QString WordGenerator::getWord(int maxWidth, Loader* loader, int id)
 {
 start:
     int wordLen = 0, len = 0;
-    QFontMetrics fm(font);
-    int widthOneLetter = fm.width("a");
+    int widthOneLetter = loader->fontWordSize("a", id).width();
 
     int letterType = disLetterType(gen);
     do {
         len = disWordLen(gen);
         wordLen = len * widthOneLetter;
 
-    } while ((maxWidth -10) < len);
+    } while ((maxWidth - 10) < len);
     //std::cout << "\n\n Image width and word width" << maxWidth << "__" << len << std::endl;
     QString word;
     for (int i = 0; i < len; i++) {
         word += getLetter(letterType);
     }
-    if (fm.width(word) > (maxWidth-10)){
-        goto start;                //потому что я могу
+    if (loader->fontWordSize(word, id).width() > (maxWidth - 10)) {
+        goto start; //потому что я могу
     }
-   // std::cout<<fm.width(word)<<"____-"<<maxWidth<<"\n";
+    // std::cout<<fm.width(word)<<"____-"<<maxWidth<<"\n";
 
     return word;
 }
 
-QRect WordGenerator::wordSize(QString word, QFont& font)
+QRect WordGenerator::wordSize(QString word, QSize wordSize)
 {
-    QFontMetrics fm(font);
-    int width = fm.width(word);
-    int height = fm.height();
+    int width = wordSize.width();
+    int height = wordSize.height();
     return { QPoint{ 0, 0 }, QPoint{ width, height } };
 }
 
